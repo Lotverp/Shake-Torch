@@ -38,10 +38,28 @@
         android:textSize="22sp" />
 
     <TextView
+        android:id="@+id/sensitivityTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/serviceSwitch"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="24dp"
+        android:text="Sensitivity" />
+
+    <SeekBar
+        android:id="@+id/sensitivitySeekBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/sensitivityTextView"
+        android:layout_marginTop="8dp"
+        android:max="9"
+        android:progress="4" />
+
+    <TextView
         android:id="@+id/instructionalTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/serviceSwitch"
+        android:layout_below="@id/sensitivitySeekBar"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="16dp"
         android:text="Activate the switch and shake the phone to turn the torch on/off"

@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Shake Torch</string>
+    <string name="notification_title">Shake Detection Active</string>
+    <string name="notification_text">Shake the phone to turn the torch on/off</string>
 </resources>

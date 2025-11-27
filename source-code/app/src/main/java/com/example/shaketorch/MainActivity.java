@@ -2,12 +2,14 @@ package com.example.shaketorch;
 
 import android.Manifest;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -23,8 +25,14 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
+    private static final String PREFS_NAME = "ShakeTorchPrefs";
+    private static final String SENSITIVITY_KEY = "sensitivity";
+    private static final int DEFAULT_SENSITIVITY = 4;
+
     private SwitchMaterial serviceSwitch;
     private TextView statusText;
+    private SeekBar sensitivitySeekBar;
+    private SharedPreferences sharedPreferences;
 
     private final ActivityResultLauncher<String[]> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), permissions -> {
@@ -49,11 +57,22 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+
+        setupViews();
+        setupListeners();
+    }
+
+    private void setupViews() {
         statusText = findViewById(R.id.statusTextView);
         serviceSwitch = findViewById(R.id.serviceSwitch);
-        ImageButton githubButton = findViewById(R.id.githubButton);
-        Button donateButton = findViewById(R.id.donateButton);
+        sensitivitySeekBar = findViewById(R.id.sensitivitySeekBar);
 
+        int savedSensitivity = sharedPreferences.getInt(SENSITIVITY_KEY, DEFAULT_SENSITIVITY);
+        sensitivitySeekBar.setProgress(savedSensitivity);
+    }
+
+    private void setupListeners() {
         serviceSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
                 checkPermissionsAndStartService();
@@ -62,15 +81,33 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        githubButton.setOnClickListener(v -> {
-            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/Lotverp"));
-            startActivity(browserIntent);
+        sensitivitySeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                sharedPreferences.edit().putInt(SENSITIVITY_KEY, progress).apply();
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {}
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                if (serviceSwitch.isChecked()) {
+                    startShakeService();
+                }
+            }
         });
 
-        donateButton.setOnClickListener(v -> {
-            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/Lotverp/Lotverp/blob/main/donate.md"));
-            startActivity(browserIntent);
-        });
+        findViewById(R.id.githubButton).setOnClickListener(v -> 
+                openUrl("https://github.com/Lotverp"));
+
+        findViewById(R.id.donateButton).setOnClickListener(v -> 
+                openUrl("https://github.com/Lotverp/Lotverp/blob/main/donate.md"));
+    }
+
+    private void openUrl(String url) {
+        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+        startActivity(browserIntent);
     }
 
     private void checkPermissionsAndStartService() {
@@ -97,15 +134,25 @@ public class MainActivity extends AppCompatActivity {
 
     private void startShakeService() {
         Intent serviceIntent = new Intent(this, ShakeService.class);
+        int sensitivity = sensitivitySeekBar.getProgress();
+        serviceIntent.putExtra(SENSITIVITY_KEY, sensitivity);
         ContextCompat.startForegroundService(this, serviceIntent);
-        statusText.setText("Service Active");
-        serviceSwitch.setText("Deactivate Shake Detector");
+        updateUI(true);
     }
 
     private void stopShakeService() {
         Intent serviceIntent = new Intent(this, ShakeService.class);
         stopService(serviceIntent);
-        statusText.setText("Service Disabled");
-        serviceSwitch.setText("Activate Shake Detector");
+        updateUI(false);
+    }
+
+    private void updateUI(boolean isServiceActive) {
+        if (isServiceActive) {
+            statusText.setText("Service Active");
+            serviceSwitch.setText("Deactivate Shake Detector");
+        } else {
+            statusText.setText("Service Disabled");
+            serviceSwitch.setText("Activate Shake Detector");
+        }
     }
 }
